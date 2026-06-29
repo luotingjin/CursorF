@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TAPD 测试用例生成器</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <div class="page">
+    <header class="hero">
+      <h1>TAPD 测试用例生成器</h1>
+      <p>填写项目与需求信息，一键生成测试用例并导入 TAPD</p>
+    </header>
+
+    <main class="layout">
+      <section class="card form-card">
+        <h2>参数配置</h2>
+        <form id="generateForm">
+          <div class="section-title">TAPD 鉴权</div>
+          <div class="grid">
+            <label>
+              <span>应用 ID <em>*</em></span>
+              <input name="client_id" required placeholder="tapd-app-xxxx" value="{{ defaults.client_id }}" />
+            </label>
+            <label>
+              <span>应用密钥 <em>*</em></span>
+              <input name="client_secret" type="password" required placeholder="应用 Secret" />
+            </label>
+          </div>
+
+          <div class="section-title">需求信息</div>
+          <div class="grid">
+            <label>
+              <span>项目 ID <em>*</em></span>
+              <input name="workspace_id" required placeholder="例如 46254053" value="{{ defaults.workspace_id }}" />
+            </label>
+            <label>
+              <span>需求 ID <em>*</em></span>
+              <input name="story_id" required placeholder="支持短 ID，如 1029894" />
+            </label>
+            <label>
+              <span>创建人 <em>*</em></span>
+              <input name="creator" required placeholder="用例创建人" value="{{ defaults.creator }}" />
+            </label>
+            <label>
+              <span>用例目录</span>
+              <input name="category" placeholder="留空则使用需求标题" />
+            </label>
+          </div>
+
+          <div class="section-title">生成选项</div>
+          <div class="grid">
+            <label>
+              <span>生成模式</span>
+              <select name="generator_mode">
+                <option value="auto">自动（有专项模板则优先使用）</option>
+                <option value="rule">规则生成（通用）</option>
+                <option value="custom">仅专项模板</option>
+              </select>
+            </label>
+            <label>
+              <span>每条需求最多用例数</span>
+              <input name="max_cases_per_story" type="number" min="1" max="20" value="8" />
+            </label>
+          </div>
+
+          <label class="checkbox">
+            <input type="checkbox" name="import_to_tapd" checked />
+            <span>生成后导入 TAPD（取消勾选则仅本地生成 CSV）</span>
+          </label>
+
+          <div class="actions">
+            <button type="submit" class="btn primary" id="submitBtn">生成测试用例</button>
+            <button type="reset" class="btn ghost">重置</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="card result-card" id="resultCard" hidden>
+        <h2>执行结果</h2>
+        <div id="resultSummary" class="summary"></div>
+        <div class="actions" id="downloadActions" hidden>
+          <a id="downloadLink" class="btn secondary" href="#" download>下载 CSV 文件</a>
+        </div>
+        <div id="resultError" class="error" hidden></div>
+        <div class="table-wrap" id="casesTableWrap" hidden>
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>用例名称</th>
+                <th>等级</th>
+                <th>类型</th>
+              </tr>
+            </thead>
+            <tbody id="casesBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const form = document.getElementById('generateForm');
+    const resultCard = document.getElementById('resultCard');
+    const resultSummary = document.getElementById('resultSummary');
+    const resultError = document.getElementById('resultError');
+    const casesBody = document.getElementById('casesBody');
+    const casesTableWrap = document.getElementById('casesTableWrap');
+    const downloadActions = document.getElementById('downloadActions');
+    const downloadLink = document.getElementById('downloadLink');
+    const submitBtn = document.getElementById('submitBtn');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      submitBtn.disabled = true;
+      submitBtn.textContent = '生成中...';
+      resultCard.hidden = false;
+      resultError.hidden = true;
+      casesTableWrap.hidden = true;
+      downloadActions.hidden = true;
+      resultSummary.innerHTML = '<p class="loading">正在连接 TAPD 并生成用例...</p>';
+
+      const fd = new FormData(form);
+      const payload = Object.fromEntries(fd.entries());
+      payload.import_to_tapd = form.import_to_tapd.checked ? 'true' : 'false';
+
+      try {
+        const res = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (!data.success) {
+          throw new Error(data.error || '生成失败');
+        }
+
+        resultSummary.innerHTML = `
+          <div class="stat-grid">
+            <div class="stat"><span>需求</span><strong>${data.story_name}</strong></div>
+            <div class="stat"><span>需求 ID</span><strong>${data.story_id}</strong></div>
+            <div class="stat"><span>创建人</span><strong>${data.creator}</strong></div>
+            <div class="stat"><span>生成数</span><strong>${data.generated_count}</strong></div>
+            <div class="stat"><span>导入数</span><strong>${data.imported_count}</strong></div>
+          </div>
+          ${data.tcase_ids?.length ? `<p class="hint">TAPD 用例 ID：${data.tcase_ids.slice(0, 5).join('、')}${data.tcase_ids.length > 5 ? '...' : ''}</p>` : ''}
+        `;
+
+        if (data.csv_download) {
+          downloadLink.href = data.csv_download;
+          downloadActions.hidden = false;
+        }
+
+        casesBody.innerHTML = '';
+        (data.test_cases || []).forEach((c, i) => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${i + 1}</td><td>${c.name}</td><td>${c.priority}</td><td>${c.type}</td>`;
+          casesBody.appendChild(tr);
+        });
+        casesTableWrap.hidden = !(data.test_cases || []).length;
+      } catch (err) {
+        resultSummary.innerHTML = '';
+        resultError.hidden = false;
+        resultError.textContent = err.message;
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = '生成测试用例';
+      }
+    });
+  </script>
+</body>
+</html>

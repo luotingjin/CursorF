@@ -12,6 +12,7 @@
 - 批量导入测试用例到 TAPD（`tcases/batch_save`）
 - 可选关联测试计划（将需求与用例挂到同一测试计划）
 - 导入前自动保存 JSON 预览到 `output/` 目录
+- **Web 页面**：可视化填写项目 ID、需求 ID 等参数，一键生成并导入
 
 ## 快速开始
 
@@ -40,7 +41,26 @@ TAPD_CLIENT_SECRET=你的应用密钥
 TAPD_WORKSPACE_ID=你的项目ID
 ```
 
-### 3. 运行
+### 3. 启动 Web 页面（推荐）
+
+```bash
+python3 run_web.py
+```
+
+浏览器访问 **http://127.0.0.1:8080**，在页面上填写：
+
+| 字段 | 说明 |
+|------|------|
+| 应用 ID / 应用密钥 | TAPD 开放平台凭证 |
+| 项目 ID | workspace_id |
+| 需求 ID | 支持短 ID（如 1029894） |
+| 创建人 | 用例创建人（固定填写） |
+
+点击「生成测试用例」即可生成 CSV 并可选导入 TAPD。
+
+`.env` 中配置的 `TAPD_CLIENT_ID`、`TAPD_WORKSPACE_ID`、`TAPD_CREATOR` 会自动预填到页面。
+
+### 4. 命令行运行
 
 ```bash
 # 查看符合条件的需求
@@ -138,7 +158,12 @@ import:
 
 ```
 .
+├── run_web.py                 # Web 页面启动入口
 ├── main.py                    # CLI 入口
+├── web/
+│   ├── app.py                 # Flask 后端
+│   ├── templates/index.html   # 页面表单
+│   └── static/style.css
 ├── config.example.yaml        # 配置模板
 ├── .env.example               # 环境变量模板
 ├── requirements.txt
