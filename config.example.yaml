@@ -1,0 +1,44 @@
+tapd:
+  api_base: https://api.tapd.cn
+  workspace_id: "10158231"
+  # client_id / client_secret 建议通过环境变量配置
+  test_plan_id: null
+  creator: null
+  category_id: "-1"  # 未规划目录
+
+story_filter:
+  # 按需求 ID 列表处理（为空则按其他条件筛选）
+  story_ids: []
+  # 迭代 ID
+  iteration_id: null
+  # 需求状态（如 planning, developing）
+  status: null
+  # 每页数量，最大 200
+  limit: 30
+  # 最大处理页数（防止误操作）
+  max_pages: 10
+
+generator:
+  # rule: 基于规则生成 | llm: 使用大模型生成
+  mode: rule
+  # 每条需求最多生成用例数
+  max_cases_per_story: 8
+  # 用例名称前缀是否包含需求 ID
+  include_story_id_in_name: true
+  # 默认用例类型与优先级
+  default_type: 功能测试
+  default_priority: 中
+
+import:
+  # 是否将用例关联到需求（需要配置 test_plan_id）
+  link_to_story: false
+  # 导入前是否 dry-run（仅预览不写入 TAPD）
+  dry_run: false
+  # 生成结果保存目录
+  output_dir: ./output
+
+llm:
+  api_key: null
+  base_url: https://api.openai.com/v1
+  model: gpt-4o-mini
+  temperature: 0.3
