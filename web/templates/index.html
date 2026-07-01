@@ -25,7 +25,7 @@
             </label>
             <label>
               <span>应用密钥 <em>*</em></span>
-              <input name="client_secret" type="password" required placeholder="应用 Secret" />
+              <input name="client_secret" type="password" required placeholder="应用 Secret" value="{{ defaults.client_secret }}" />
             </label>
           </div>
 
@@ -59,10 +59,6 @@
                 <option value="custom">仅专项模板</option>
               </select>
             </label>
-            <label>
-              <span>每条需求最多用例数</span>
-              <input name="max_cases_per_story" type="number" min="1" max="20" value="8" />
-            </label>
           </div>
 
           <label class="checkbox">
@@ -72,7 +68,7 @@
 
           <div class="actions">
             <button type="submit" class="btn primary" id="submitBtn">生成测试用例</button>
-            <button type="reset" class="btn ghost">重置</button>
+            <button type="button" class="btn ghost" id="resetBtn">重置</button>
           </div>
         </form>
       </section>
@@ -101,8 +97,23 @@
     </main>
   </div>
 
+  <script id="envDefaults" type="application/json">{{ defaults | tojson }}</script>
   <script>
     const form = document.getElementById('generateForm');
+    const envDefaults = JSON.parse(document.getElementById('envDefaults').textContent || '{}');
+
+    function formField(name) {
+      return form.elements.namedItem(name);
+    }
+
+    if (envDefaults.client_id && !formField('client_id')?.value) {
+      const clientId = formField('client_id');
+      if (clientId) clientId.value = envDefaults.client_id;
+    }
+    if (envDefaults.client_secret) {
+      const clientSecret = formField('client_secret');
+      if (clientSecret) clientSecret.value = envDefaults.client_secret;
+    }
     const resultCard = document.getElementById('resultCard');
     const resultSummary = document.getElementById('resultSummary');
     const resultError = document.getElementById('resultError');
@@ -111,6 +122,35 @@
     const downloadActions = document.getElementById('downloadActions');
     const downloadLink = document.getElementById('downloadLink');
     const submitBtn = document.getElementById('submitBtn');
+    const resetBtn = document.getElementById('resetBtn');
+
+    function resetForm(event) {
+      event?.preventDefault();
+      form.reset();
+      const defaults = {
+        client_id: envDefaults.client_id || '',
+        client_secret: envDefaults.client_secret || '',
+        workspace_id: envDefaults.workspace_id || '',
+        creator: envDefaults.creator || '',
+        story_id: '',
+        category: '',
+        generator_mode: 'auto',
+      };
+      Object.entries(defaults).forEach(([name, value]) => {
+        const el = formField(name);
+        if (el) el.value = value;
+      });
+      const importCheckbox = formField('import_to_tapd');
+      if (importCheckbox) importCheckbox.checked = true;
+      resultCard.hidden = true;
+      resultError.hidden = true;
+      casesTableWrap.hidden = true;
+      downloadActions.hidden = true;
+      resultSummary.innerHTML = '';
+      casesBody.innerHTML = '';
+    }
+
+    resetBtn.addEventListener('click', resetForm);
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();

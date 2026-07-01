@@ -33,7 +33,7 @@ class TestRuleGenerator(unittest.TestCase):
             description="验收标准\n- 正确账号可登录\n- 错误密码提示",
             test_focus="密码强度校验",
         )
-        gen = RuleBasedGenerator(GeneratorConfig(max_cases_per_story=5))
+        gen = RuleBasedGenerator(GeneratorConfig())
         cases = gen.generate(story)
         self.assertGreaterEqual(len(cases), 2)
         self.assertTrue(any("主流程" in c.name for c in cases))

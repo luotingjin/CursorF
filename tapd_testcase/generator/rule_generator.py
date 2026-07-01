@@ -49,7 +49,7 @@ def extract_acceptance_criteria(text: str) -> list[str]:
             if re.match(r"^[-*•\d]+[.)）]?\s*(.+)$", line):
                 items.append(re.sub(r"^[-*•\d]+[.)）]?\s*", "", line).strip())
 
-    return [x for x in items if len(x) >= 4][:10]
+    return [x for x in items if len(x) >= 4]
 
 
 class RuleBasedGenerator(BaseGenerator):
@@ -88,7 +88,7 @@ class RuleBasedGenerator(BaseGenerator):
             )
         )
 
-        for idx, criterion in enumerate(unique_criteria[: self.config.max_cases_per_story - 2], start=1):
+        for idx, criterion in enumerate(unique_criteria, start=1):
             cases.append(
                 TestCase(
                     name=f"{prefix}{story.name} - 验收项{idx}: {criterion[:30]}",
@@ -115,7 +115,7 @@ class RuleBasedGenerator(BaseGenerator):
             )
         )
 
-        return cases[: self.config.max_cases_per_story]
+        return cases
 
     def _build_main_steps(self, name: str, description: str) -> str:
         summary = description[:300].replace("\n", " ") if description else name

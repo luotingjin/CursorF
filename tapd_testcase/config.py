@@ -21,7 +21,7 @@ class StoryFilterConfig:
 @dataclass
 class GeneratorConfig:
     mode: str = "rule"
-    max_cases_per_story: int = 8
+    max_cases_per_story: int = 0  # 0 表示不限制
     include_story_id_in_name: bool = True
     default_type: str = "功能测试"
     default_priority: str = "中"
@@ -97,7 +97,7 @@ class AppConfig:
         gen = data.get("generator", {})
         generator = GeneratorConfig(
             mode=gen.get("mode", "rule"),
-            max_cases_per_story=int(gen.get("max_cases_per_story", 8)),
+            max_cases_per_story=int(gen.get("max_cases_per_story", 0)),
             include_story_id_in_name=bool(gen.get("include_story_id_in_name", True)),
             default_type=gen.get("default_type", "功能测试"),
             default_priority=gen.get("default_priority", "中"),

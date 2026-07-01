@@ -21,8 +21,8 @@ story_filter:
 generator:
   # rule: 基于规则生成 | llm: 使用大模型生成
   mode: rule
-  # 每条需求最多生成用例数
-  max_cases_per_story: 8
+  # 每条需求最多生成用例数，0 表示不限制
+  max_cases_per_story: 0
   # 用例名称前缀是否包含需求 ID
   include_story_id_in_name: true
   # 默认用例类型与优先级

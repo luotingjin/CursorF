@@ -8,16 +8,18 @@ from dotenv import load_dotenv
 
 from tapd_testcase.service import GenerateRequest, run_generate
 
-load_dotenv()
+ROOT = Path(__file__).resolve().parent.parent
+load_dotenv(ROOT / ".env", override=True)
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
-OUTPUT_ROOT = Path(__file__).resolve().parent.parent / "output" / "web"
+OUTPUT_ROOT = ROOT / "output" / "web"
 
 
 @app.get("/")
 def index():
     defaults = {
         "client_id": os.getenv("TAPD_CLIENT_ID", ""),
+        "client_secret": os.getenv("TAPD_CLIENT_SECRET", ""),
         "workspace_id": os.getenv("TAPD_WORKSPACE_ID", ""),
         "creator": os.getenv("TAPD_CREATOR", ""),
     }
@@ -41,7 +43,6 @@ def api_generate():
         creator=str(data["creator"]).strip(),
         category=str(data.get("category", "")).strip(),
         generator_mode=str(data.get("generator_mode", "auto")).strip(),
-        max_cases_per_story=int(data.get("max_cases_per_story", 8)),
         import_to_tapd=str(data.get("import_to_tapd", "true")).lower() in ("1", "true", "yes", "on"),
         output_dir=str(OUTPUT_ROOT),
     )

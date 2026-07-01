@@ -27,7 +27,6 @@ class GenerateRequest:
     creator: str
     category: str = ""
     generator_mode: str = "auto"  # auto | rule | custom
-    max_cases_per_story: int = 8
     import_to_tapd: bool = True
     output_dir: str = "output/web"
 
@@ -73,7 +72,6 @@ def pick_generator(req: GenerateRequest, story: Story) -> Callable[[Story], list
 
     rule = RuleBasedGenerator(
         GeneratorConfig(
-            max_cases_per_story=req.max_cases_per_story,
             include_story_id_in_name=True,
         )
     )

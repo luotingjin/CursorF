@@ -35,13 +35,18 @@ class LLMGenerator(BaseGenerator):
 
     def generate(self, story: Story) -> list[TestCase]:
         plain_desc = strip_html(story.description)
+        limit_hint = (
+            f"请生成不超过 {self.gen_config.max_cases_per_story} 条测试用例。"
+            if self.gen_config.max_cases_per_story > 0
+            else "请根据需求全面生成测试用例，覆盖主流程、分支、异常与边界。"
+        )
         user_prompt = (
             f"需求标题：{story.name}\n"
             f"需求 ID：{story.id}\n"
             f"测试重点：{story.test_focus or '无'}\n"
             f"优先级：{story.priority or '无'}\n"
             f"详细描述：\n{plain_desc or '无'}\n\n"
-            f"请生成不超过 {self.gen_config.max_cases_per_story} 条测试用例。"
+            f"{limit_hint}"
         )
 
         response = self.client.chat.completions.create(
@@ -57,7 +62,8 @@ class LLMGenerator(BaseGenerator):
 
         cases: list[TestCase] = []
         prefix = f"[{story.id}] " if self.gen_config.include_story_id_in_name else ""
-        for item in raw_cases[: self.gen_config.max_cases_per_story]:
+        raw_slice = raw_cases if self.gen_config.max_cases_per_story <= 0 else raw_cases[: self.gen_config.max_cases_per_story]
+        for item in raw_slice:
             name = str(item.get("name", "未命名用例"))
             if prefix and not name.startswith(prefix):
                 name = f"{prefix}{name}"

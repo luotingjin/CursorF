@@ -21,7 +21,7 @@ def make_config(**overrides) -> AppConfig:
             creator="tester",
         ),
         story_filter=StoryFilterConfig(story_ids=["1010104801869398419"], limit=1, max_pages=1),
-        generator=GeneratorConfig(mode="rule", max_cases_per_story=5),
+        generator=GeneratorConfig(mode="rule"),
         import_=ImportConfig(dry_run=False, output_dir="./output_test"),
     )
     for key, value in overrides.items():
